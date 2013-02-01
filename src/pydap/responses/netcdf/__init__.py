@@ -9,10 +9,6 @@ from pupynere import netcdf_file, nc_generator
 class NCResponse(BaseResponse):
     def __init__(self, dataset):
         BaseResponse.__init__(self, dataset)
-        self.headers.extend([
-            ('Content-description', 'dods_ascii'),
-            ('Content-type', 'application/x-netcdf'),
-        ])
 
         self.nc = netcdf_file(None)
         self.nc._attributes.update(self.dataset.attributes['NC_GLOBAL'])
@@ -39,6 +35,12 @@ class NCResponse(BaseResponse):
         for var in walk(self.dataset, BaseType):
             if var.name not in self.nc.variables.keys():
                 v = self.nc.createVariable(var.name, var.dtype.char, var.dimensions, attributes=var.attributes)
+
+        self.headers.extend([
+            ('Content-description', 'dods_ascii'),
+            ('Content-type', 'application/x-netcdf'),
+            ('Content-length', self.nc.filesize),
+        ])
 
     def __iter__(self):
         nc = self.nc
