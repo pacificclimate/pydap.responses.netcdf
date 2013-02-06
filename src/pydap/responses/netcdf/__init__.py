@@ -37,7 +37,6 @@ class NCResponse(BaseResponse):
                 v = self.nc.createVariable(var.name, var.dtype.char, var.dimensions, attributes=var.attributes)
 
         self.headers.extend([
-            ('Content-description', 'dods_ascii'),
             ('Content-type', 'application/x-netcdf'),
             ('Content-length', self.nc.filesize),
         ])
