@@ -51,7 +51,8 @@ class NCResponse(BaseResponse):
                     var2id[recvar] = dstvar.id
                     continue
 
-        input = iter([ get_var(self.dataset, var2id[varname]).data for varname in nc.non_recvars.keys() ])
+        input = chain.from_iterable([ iter(get_var(self.dataset, var2id[varname]).data) for varname in nc.non_recvars.keys() ])
+        #input = iter([ get_var(self.dataset, var2id[varname]).data for varname in nc.non_recvars.keys() ])
 
         recvars = nc.recvars.keys()
 
