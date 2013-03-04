@@ -21,21 +21,28 @@ class NCResponse(BaseResponse):
         except:
             unlim_dim = None
 
-        # Create the dimensions
-        for dim in dimensions:
-            n = None if dim == unlim_dim else len(self.dataset[dim])
-            self.nc.createDimension(dim, n)
-            # Create the unlimited dimension and corresponding variable
-            if not n:
-                self.nc.set_numrecs(len(self.dataset[dim]))
-            if dim in self.dataset.keys():
-                var = self.dataset[dim]
+        # GridType
+        for grid in walk(dataset, GridType):
+
+            # add dimensions
+            for dim, map_ in grid.maps.items():
+                if dim in self.nc.dimensions:
+                    continue
+
+                n = None if dim == unlim_dim else len(grid[dim])
+                self.nc.createDimension(dim, n)
+                if not n:
+                    self.nc.set_numrecs(len(grid[dim]))
+                var = grid[dim]
+
+                # and add dimension variable
                 self.nc.createVariable(dim, var.dtype.char, (dim,), attributes=var.attributes)
 
-        # Create the variables
-        for var in walk(self.dataset, BaseType):
-            if var.name not in self.nc.variables.keys():
-                v = self.nc.createVariable(var.name, var.dtype.char, var.dimensions, attributes=var.attributes)
+            # finally add the gird variable itself
+            base_var = grid[grid.name]
+            var = self.nc.createVariable(base_var.name, base_var.dtype.char, base_var.dimensions, attributes=base_var.attributes)
+
+        # FIXME: Sequence types!
 
         self.headers.extend([
             ('Content-type', 'application/x-netcdf'),
