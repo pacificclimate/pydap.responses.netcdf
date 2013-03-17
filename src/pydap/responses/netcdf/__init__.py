@@ -38,7 +38,7 @@ class NCResponse(BaseResponse):
                 # and add dimension variable
                 self.nc.createVariable(dim, var.dtype.char, (dim,), attributes=var.attributes)
 
-            # finally add the gird variable itself
+            # finally add the grid variable itself
             base_var = grid[grid.name]
             var = self.nc.createVariable(base_var.name, base_var.dtype.char, base_var.dimensions, attributes=base_var.attributes)
 
@@ -75,6 +75,7 @@ class NCResponse(BaseResponse):
             vars = [ get_var(dst, table[varname]) for varname in nc.recvars.keys() ]
             for i in range(nc._recs):
                 for var in vars:
+                    # FIXME: if it's data yield it, if it's iterable, iterate over it and yield?
                     yield var.data[i]
 
         more_input = record_generator(nc, self.dataset, var2id)
