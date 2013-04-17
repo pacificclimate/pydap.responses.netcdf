@@ -21,23 +21,23 @@ class NetCDFResponse(BaseResponse):
         buf = StringIO()
         f = netcdf_file(buf, 'w')
 
-        nc_global = dataset.attributes.pop('NC_GLOBAL', {})
+        nc_global = self.dataset.attributes.pop('NC_GLOBAL', {})
         for k, v in nc_global.items():
             if not isinstance(v, dict):
                 setattr(f, k, v)
-        for k, v in dataset.attributes.items():
+        for k, v in self.dataset.attributes.items():
             if not isinstance(v, dict):
                 setattr(f, k, v)
 
         # Gridded data
-        for grid in walk(dataset, GridType):
+        for grid in walk(self.dataset, GridType):
             for dim, map_ in grid.maps.items():
                 if dim in f.dimensions:
                     continue
 
                 length = map_.shape[0]
                 try:
-                    unlimited = dataset.attributes['DODS_EXTRA']['Unlimited_Dimensions']
+                    unlimited = self.dataset.attributes['DODS_EXTRA']['Unlimited_Dimensions']
                     if dim == unlimited:
                         length = None
                 except KeyError:
