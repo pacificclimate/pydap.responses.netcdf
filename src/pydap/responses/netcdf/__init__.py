@@ -46,6 +46,10 @@ class NetCDFResponse(BaseResponse):
                 f.createDimension(dim, length)
                 var = f.createVariable(dim, map_.dtype.char, (dim,))
                 var[:] = map_[:]
+                if map_.name in self.dataset:
+                    for k, v in self.dataset[map_.name].attributes.items():
+                        if not isinstance(v, dict):
+                            setattr(var, k, v)
                 for k, v in map_.attributes.items():
                     if not isinstance(v, dict):
                         setattr(var, k, v)
