@@ -4,6 +4,7 @@ from pydap.responses.lib import BaseResponse
 from itertools import chain, ifilter
 from numpy.compat import asbytes
 from collections import Iterator
+from logging import debug
 
 from pupynere import netcdf_file, nc_generator
 
@@ -29,10 +30,10 @@ class NCResponse(BaseResponse):
                 if dim in self.nc.dimensions:
                     continue
 
-                n = None if dim == unlim_dim else len(grid[dim])
+                n = None if dim == unlim_dim else grid[dim].data.shape[0]
                 self.nc.createDimension(dim, n)
                 if not n:
-                    self.nc.set_numrecs(len(grid[dim]))
+                    self.nc.set_numrecs(grid[dim].data.shape[0])
                 var = grid[dim]
 
                 # and add dimension variable
@@ -60,28 +61,35 @@ class NCResponse(BaseResponse):
                     var2id[recvar] = dstvar.id
                     continue
 
-        # Make a list of the non record variables to iterate over...
-        input = [ get_var(self.dataset, var2id[varname]).data for varname in nc.non_recvars.keys() ]
-        # ... but remove 0-d variables
-        input = ifilter(lambda x: x.shape, input)
-        # Make sure that all elements of the list are iterators
-        input = [ i if isinstance(i, Iterator) else iter(i) for i in input ]
-        # chain iterators together for the final response
-        input = chain(*input)
+        def nonrecord_input():
+            for varname in nc.non_recvars.keys():
+                debug("Iterator for %s", varname)
+                dst_var = get_var(self.dataset, var2id[varname]).data
+                # skip 0-d variables
+                if not dst_var.shape:
+                    continue
+                # Make sure that all elements of the list are iterators
+                if isinstance(dst_var, Iterator):
+                    yield dst_var
+                else:
+                    yield iter(dst_var)
 
         # Create an generator for the record variables
         recvars = nc.recvars.keys()
         def record_generator(nc, dst, table):
-            vars = [ get_var(dst, table[varname]) for varname in nc.recvars.keys() ]
-            for i in range(nc._recs):
+            debug("record_generator() for dataset %s", dst)
+            vars = [ iter(get_var(dst, table[varname])) for varname in nc.recvars.keys() ]
+            while True:
                 for var in vars:
-                    # FIXME: if it's data yield it, if it's iterable, iterate over it and yield?
-                    yield var.data[i]
+                    try:
+                        yield var.next()
+                    except StopIteration:
+                        raise
 
         more_input = record_generator(nc, self.dataset, var2id)
 
         # Create a single pipeline which includes the non-record and record variables
-        pipeline = nc_generator(nc, chain(input, more_input))
+        pipeline = nc_generator(nc, chain(nonrecord_input(), more_input))
 
         # Generate the netcdf stream
         for block in pipeline:
