@@ -9,10 +9,8 @@ NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 version = '0.1'
 
 install_requires = [
-    # List your project dependencies here.
-    # For more details, see:
-    # http://packages.python.org/distribute/setuptools.html#declaring-dependencies
-    'pupynere>=1.1.1'
+    'pupynere >=1.1.2a1',
+    'pydap ==3.2.1'
 ]
 
 
@@ -26,7 +24,6 @@ setup(name='pydap.responses.netcdf',
     keywords='netcdf pydap opendap dods',
     author='James Hiebert',
     author_email='james@hiebert.name',
-    #url='http://pydap.org/responses.html#json',
     license='MIT',
     packages=find_packages('src'),
     package_dir = {'': 'src'},
