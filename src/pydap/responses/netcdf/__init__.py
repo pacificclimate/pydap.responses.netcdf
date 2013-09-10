@@ -5,8 +5,10 @@ from itertools import chain, ifilter
 from numpy.compat import asbytes
 from collections import Iterator
 from logging import debug
+from datetime import datetime
 
 from pupynere import netcdf_file, nc_generator
+import numpy
 
 class NCResponse(BaseResponse):
     def __init__(self, dataset):
@@ -43,7 +45,25 @@ class NCResponse(BaseResponse):
             base_var = grid[grid.name]
             var = self.nc.createVariable(base_var.name, base_var.dtype.char, base_var.dimensions, attributes=base_var.attributes)
 
-        # FIXME: Sequence types!
+        # Sequence types!
+        for seq in walk(dataset, SequenceType):
+
+            self.nc.createDimension(seq.name, None)
+            self.nc.set_numrecs(len(seq))
+
+            dim = seq.name,
+
+            for child in seq.children():
+                # detect the dtype
+                if child.dtype.char == 'O':
+                    raise Exception()
+                    # is it a date?
+                    if type([x for x in child.data[0]][0]) == datetime:
+                        child.dtype = numpy.datetime64
+                    else:
+                        raise TypeError("Don't know how to handle numpy type {0}".format(child.dtype))
+                        
+                var = self.nc.createVariable(child.name, child.dtype.char, dim, attributes=child.attributes)
 
         self.headers.extend([
             ('Content-type', 'application/x-netcdf')
@@ -77,6 +97,7 @@ class NCResponse(BaseResponse):
                     yield dst_var
                 else:
                     yield iter(dst_var)
+            debug("Done with nonrecord input")
 
         # Create an generator for the record variables
         recvars = nc.recvars.keys()
