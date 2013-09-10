@@ -46,9 +46,13 @@ class NCResponse(BaseResponse):
         # FIXME: Sequence types!
 
         self.headers.extend([
-            ('Content-type', 'application/x-netcdf'),
-            ('Content-length', self.nc.filesize),
+            ('Content-type', 'application/x-netcdf')
         ])
+        # Optionally set the filesize header if possible
+        try:
+            self.headers.extend([('Content-length', self.nc.filesize)])
+        except ValueError:
+            pass
 
     def __iter__(self):
         nc = self.nc
