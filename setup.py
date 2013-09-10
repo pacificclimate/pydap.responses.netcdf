@@ -6,10 +6,10 @@ README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
 
-version = '0.1'
+version = '0.2'
 
 install_requires = [
-    'pupynere >=1.1.2a1',
+    'pupynere >=1.1.2a2',
     'pydap ==3.2.1'
 ]
 
