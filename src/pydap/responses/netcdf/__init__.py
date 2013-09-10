@@ -84,18 +84,18 @@ class NCResponse(BaseResponse):
                     var2id[recvar] = dstvar.id
                     continue
 
-        def typer(value):
-            print "in typer", value
+        def type_generator(input):
             # is this a "scalar" (i.e. a standard python object)
             # if so, it needs to be a numpy array, or at least have 'dtype' and 'byteswap' attributes
-            if isinstance(value, (type(None), str, int, float, bool, datetime)):
-                # special case datetimes, since dates aren't supported by NetCDF3
-                if type(value) == datetime:
-                    return np.array(time.mktime(value.timetuple()) / 3600. / 24., dtype='Float32') # days since epoch
+            for value in input:
+                if isinstance(value, (type(None), str, int, float, bool, datetime)):
+                    # special case datetimes, since dates aren't supported by NetCDF3
+                    if type(value) == datetime:
+                        yield np.array(time.mktime(value.timetuple()) / 3600. / 24., dtype='Float32') # days since epoch
+                    else:
+                        yield np.array(value)
                 else:
-                    return np.array(value)
-            else:
-                return value
+                    yield value
             
         def nonrecord_input():
             for varname in nc.non_recvars.keys():
@@ -106,9 +106,9 @@ class NCResponse(BaseResponse):
                     continue
                 # Make sure that all elements of the list are iterators
                 if isinstance(dst_var, Iterator):
-                    yield typer(dst_var)
+                    yield dst_var
                 else:
-                    yield typer(iter(dst_var))
+                    yield iter(dst_var)
             debug("Done with nonrecord input")
 
         # Create an generator for the record variables
@@ -119,14 +119,14 @@ class NCResponse(BaseResponse):
             while True:
                 for var in vars:
                     try:
-                        yield typer(var.next())
+                        yield var.next()
                     except StopIteration:
                         raise
                     
-        more_input = record_generator(nc, self.dataset, var2id)
+        more_input = type_generator(record_generator(nc, self.dataset, var2id))
 
         # Create a single pipeline which includes the non-record and record variables
-        pipeline = nc_generator(nc, chain(nonrecord_input(), more_input))
+        pipeline = nc_generator(nc, chain(type_generator(nonrecord_input()), more_input))
 
         # Generate the netcdf stream
         for block in pipeline:
