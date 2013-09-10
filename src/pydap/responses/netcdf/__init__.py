@@ -6,9 +6,10 @@ from numpy.compat import asbytes
 from collections import Iterator
 from logging import debug
 from datetime import datetime
+import time
 
 from pupynere import netcdf_file, nc_generator
-import numpy
+import numpy as np
 
 class NCResponse(BaseResponse):
     def __init__(self, dataset):
@@ -54,16 +55,14 @@ class NCResponse(BaseResponse):
             dim = seq.name,
 
             for child in seq.children():
-                # detect the dtype
-                if child.dtype.char == 'O':
-                    raise Exception()
-                    # is it a date?
-                    if type([x for x in child.data[0]][0]) == datetime:
-                        child.dtype = numpy.datetime64
-                    else:
-                        raise TypeError("Don't know how to handle numpy type {0}".format(child.dtype))
+                dtype = child.dtype
+                # netcdf does not have a date type, so remap to float
+                if dtype == np.dtype('datetime64'):
+                    dtype = np.dtype('float32')
+                elif dtype == np.dtype('object'):
+                    raise TypeError("Don't know how to handle numpy type {0}".format(dtype))
                         
-                var = self.nc.createVariable(child.name, child.dtype.char, dim, attributes=child.attributes)
+                var = self.nc.createVariable(child.name, dtype.char, dim, attributes=child.attributes)
 
         self.headers.extend([
             ('Content-type', 'application/x-netcdf')
@@ -85,6 +84,19 @@ class NCResponse(BaseResponse):
                     var2id[recvar] = dstvar.id
                     continue
 
+        def typer(value):
+            print "in typer", value
+            # is this a "scalar" (i.e. a standard python object)
+            # if so, it needs to be a numpy array, or at least have 'dtype' and 'byteswap' attributes
+            if isinstance(value, (type(None), str, int, float, bool, datetime)):
+                # special case datetimes, since dates aren't supported by NetCDF3
+                if type(value) == datetime:
+                    return np.array(time.mktime(value.timetuple()) / 3600. / 24., dtype='Float32') # days since epoch
+                else:
+                    return np.array(value)
+            else:
+                return value
+            
         def nonrecord_input():
             for varname in nc.non_recvars.keys():
                 debug("Iterator for %s", varname)
@@ -94,9 +106,9 @@ class NCResponse(BaseResponse):
                     continue
                 # Make sure that all elements of the list are iterators
                 if isinstance(dst_var, Iterator):
-                    yield dst_var
+                    yield typer(dst_var)
                 else:
-                    yield iter(dst_var)
+                    yield typer(iter(dst_var))
             debug("Done with nonrecord input")
 
         # Create an generator for the record variables
@@ -107,10 +119,10 @@ class NCResponse(BaseResponse):
             while True:
                 for var in vars:
                     try:
-                        yield var.next()
+                        yield typer(var.next())
                     except StopIteration:
                         raise
-
+                    
         more_input = record_generator(nc, self.dataset, var2id)
 
         # Create a single pipeline which includes the non-record and record variables
