@@ -5,14 +5,14 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 
-
 version = '0.2'
 
 install_requires = [
     'pupynere >=1.1.2a2',
-    'pydap ==3.2.1'
+    'pydap >=3.2.1'
 ]
 
+sw_path = 'hg+ssh://medusa.pcic.uvic.ca//home/data/projects/comp_support/software'
 
 setup(name='pydap.responses.netcdf',
     version=version,
@@ -24,6 +24,8 @@ setup(name='pydap.responses.netcdf',
     keywords='netcdf pydap opendap dods',
     author='James Hiebert',
     author_email='james@hiebert.name',
+    dependency_links = ['{0}/Pydap-3.2@3.2.1#egg=Pydap-3.2.1'.format(sw_path),
+                        '{0}/pupynere@1.1.2a2#egg=pupynere-1.1.2a2'.format(sw_path)],
     license='MIT',
     packages=find_packages('src'),
     package_dir = {'': 'src'},
