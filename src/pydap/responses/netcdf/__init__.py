@@ -104,14 +104,13 @@ class NCResponse(BaseResponse):
                 # skip 0-d variables
                 if not dst_var.shape:
                     continue
+
                 # Make sure that all elements of the list are iterators
-                if isinstance(dst_var, Iterator):
-                    yield dst_var
-                else:
-                    yield iter(dst_var)
+                for x in dst_var:
+                    yield x
             debug("Done with nonrecord input")
 
-        # Create an generator for the record variables
+        # Create a generator for the record variables
         recvars = nc.recvars.keys()
         def record_generator(nc, dst, table):
             debug("record_generator() for dataset %s", dst)
