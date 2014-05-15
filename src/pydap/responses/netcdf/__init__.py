@@ -1,15 +1,16 @@
-from pydap.model import *
-from pydap.lib import walk, get_var
-from pydap.responses.lib import BaseResponse
+import time
+
 from itertools import chain, ifilter
-from numpy.compat import asbytes
 from collections import Iterator
 from logging import debug
 from datetime import datetime
-import time
 
-from pupynere import netcdf_file, nc_generator
 import numpy as np
+from numpy.compat import asbytes
+from pydap.model import *
+from pydap.lib import walk, get_var
+from pydap.responses.lib import BaseResponse
+from pupynere import netcdf_file, nc_generator
 
 class NCResponse(BaseResponse):
     def __init__(self, dataset):
