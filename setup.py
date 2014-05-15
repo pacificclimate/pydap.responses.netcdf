@@ -8,11 +8,10 @@ NEWS = open(os.path.join(here, 'NEWS.txt')).read()
 version = '0.4'
 
 install_requires = [
+    'numpy',
     'pupynere >=1.1.2a2',
     'pydap >=3.2.1'
 ]
-
-sw_path = 'hg+ssh://medusa.pcic.uvic.ca//home/data/projects/comp_support/software'
 
 setup(name='pydap.responses.netcdf',
     version=version,
@@ -24,8 +23,8 @@ setup(name='pydap.responses.netcdf',
     keywords='netcdf pydap opendap dods',
     author='James Hiebert',
     author_email='james@hiebert.name',
-    dependency_links = ['{0}/Pydap-3.2@3.2.1#egg=Pydap-3.2.1'.format(sw_path),
-                        '{0}/pupynere@912821570233#egg=pupynere-1.1.2a2'.format(sw_path)],
+    dependency_links = ['https://github.com/pacificclimate/pydap-pdp/tarball/master#egg=Pydap-3.2.2',
+                        'https://github.com/pacificclimate/pupynere-pdp/tarball/master#egg=pupynere-1.1.2a2'],
     license='MIT',
     packages=find_packages('src'),
     package_dir = {'': 'src'},
