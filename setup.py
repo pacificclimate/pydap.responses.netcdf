@@ -9,8 +9,8 @@ version = '0.4'
 
 install_requires = [
     'numpy',
-    'pupynere >=1.1.2a2',
-    'pydap >=3.2.1'
+    'pupynere_pdp >=1.1.2a2',
+    'pydap_pdp >=3.2.1'
 ]
 
 setup(name='pydap.responses.netcdf',
@@ -23,8 +23,6 @@ setup(name='pydap.responses.netcdf',
     keywords='netcdf pydap opendap dods',
     author='James Hiebert',
     author_email='james@hiebert.name',
-    dependency_links = ['https://github.com/pacificclimate/pydap-pdp/tarball/master#egg=Pydap-3.2.2',
-                        'https://github.com/pacificclimate/pupynere-pdp/tarball/master#egg=pupynere-1.1.2a2'],
     license='MIT',
     packages=find_packages('src'),
     package_dir = {'': 'src'},
