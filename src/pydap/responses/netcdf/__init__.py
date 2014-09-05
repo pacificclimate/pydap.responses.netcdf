@@ -17,7 +17,8 @@ class NCResponse(BaseResponse):
         BaseResponse.__init__(self, dataset)
 
         self.nc = netcdf_file(None)
-        self.nc._attributes.update(self.dataset.attributes['NC_GLOBAL'])
+        if 'NC_GLOBAL' in self.dataset.attributes:
+            self.nc._attributes.update(self.dataset.attributes['NC_GLOBAL'])
 
         dimensions = [var.dimensions for var in walk(self.dataset) if isinstance(var, BaseType)]
         dimensions = set(reduce(lambda x, y: x+y, dimensions))
@@ -51,7 +52,14 @@ class NCResponse(BaseResponse):
         for seq in walk(dataset, SequenceType):
 
             self.nc.createDimension(seq.name, None)
-            self.nc.set_numrecs(len(seq))
+            try:
+                n = len(seq)
+            except TypeError:
+                # FIXME: materializing and iterating through a sequence to find the length
+                # could have performance problems and could potentially consume the iterable
+                # Do lots of testing here and determine the result of not calling set_numrecs()
+                n = len( [ x for x in seq[seq.keys()[0]] ])
+            self.nc.set_numrecs(n)
 
             dim = seq.name,
 
