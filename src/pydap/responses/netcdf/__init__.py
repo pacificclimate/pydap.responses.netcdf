@@ -94,13 +94,15 @@ class NCResponse(BaseResponse):
                     continue
 
         def type_generator(input):
+            epoch = datetime(1970, 1, 1)
             # is this a "scalar" (i.e. a standard python object)
             # if so, it needs to be a numpy array, or at least have 'dtype' and 'byteswap' attributes
             for value in input:
                 if isinstance(value, (type(None), str, int, float, bool, datetime)):
                     # special case datetimes, since dates aren't supported by NetCDF3
                     if type(value) == datetime:
-                        yield np.array(time.mktime(value.timetuple()) / 3600. / 24., dtype='Float32') # days since epoch
+                        since_epoch = (value - epoch).total_seconds() 
+                        yield np.array(since_epoch / 3600. / 24., dtype='Float32') # days since epoch
                     else:
                         yield np.array(value)
                 else:
