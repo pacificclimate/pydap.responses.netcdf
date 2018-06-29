@@ -78,7 +78,7 @@ class NCResponse(BaseResponse):
         ])
         # Optionally set the filesize header if possible
         try:
-            self.headers.extend([('Content-length', self.nc.filesize)])
+            self.headers.extend([('Content-length', str(self.nc.filesize))])
         except ValueError:
             pass
 
