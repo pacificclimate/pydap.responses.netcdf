@@ -125,6 +125,9 @@ class NCResponse(BaseResponse):
         recvars = nc.recvars.keys()
         def record_generator(nc, dst, table):
             debug("record_generator() for dataset %s", dst)
+            if not nc.recvars:
+                debug("file has no record variables")
+                yield None
             vars = [ iter(get_var(dst, table[varname])) for varname in nc.recvars.keys() ]
             while True:
                 for var in vars:
