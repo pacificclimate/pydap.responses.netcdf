@@ -2,7 +2,7 @@ import time
 
 from itertools import chain, ifilter
 from collections import Iterator
-from logging import debug
+import logging
 from datetime import datetime
 
 import numpy as np
@@ -12,13 +12,19 @@ from pydap.lib import walk, get_var
 from pydap.responses.lib import BaseResponse
 from pupynere import netcdf_file, nc_generator
 
+logger = logging.getLogger(__name__)
+
+
 class NCResponse(BaseResponse):
     def __init__(self, dataset):
         BaseResponse.__init__(self, dataset)
+        logger.debug(dataset)
 
         self.nc = netcdf_file(None)
         if 'NC_GLOBAL' in self.dataset.attributes:
             self.nc._attributes.update(self.dataset.attributes['NC_GLOBAL'])
+        #global_attrs = { attr: getattr(self.dataset, attr) for attr in self.dataset.ncattrs() }
+        #self.nc._attributes.update(global_attrs)
 
         dimensions = [var.dimensions for var in walk(self.dataset) if isinstance(var, BaseType)]
         dimensions = set(reduce(lambda x, y: x+y, dimensions))
@@ -94,6 +100,7 @@ class NCResponse(BaseResponse):
                     continue
 
         def type_generator(input):
+            logging.debug("type_generator()")
             epoch = datetime(1970, 1, 1)
             # is this a "scalar" (i.e. a standard python object)
             # if so, it needs to be a numpy array, or at least have 'dtype' and 'byteswap' attributes
@@ -109,8 +116,9 @@ class NCResponse(BaseResponse):
                     yield value
             
         def nonrecord_input():
+            logging.debug("nonrecord_input()")
             for varname in nc.non_recvars.keys():
-                debug("Iterator for %s", varname)
+                logger.debug("Iterator for %s", varname)
                 dst_var = get_var(self.dataset, var2id[varname]).data
                 # skip 0-d variables
                 if not dst_var.shape:
@@ -118,23 +126,33 @@ class NCResponse(BaseResponse):
 
                 # Make sure that all elements of the list are iterators
                 for x in dst_var:
+                    logger.debug("Yielding %s from nonrecord_input()", x)
                     yield x
-            debug("Done with nonrecord input")
+            logger.debug("Done with nonrecord input")
 
         # Create a generator for the record variables
         recvars = nc.recvars.keys()
         def record_generator(nc, dst, table):
-            debug("record_generator() for dataset %s", dst)
+            logger.debug("record_generator() for dataset %s", dst)
             if not nc.recvars:
-                debug("file has no record variables")
-                return
-            vars = [ iter(get_var(dst, table[varname])) for varname in nc.recvars.keys() ]
+                logger.debug("file has no record variables")
+                yield None
+                #return
+            vars = [ (varname, iter(get_var(dst, table[varname]))) for varname in nc.recvars.keys() ]
+            logger.debug("file has record variables %s", nc.recvars.keys())
             while True:
-                for var in vars:
+                for varname, var in vars:
+                    logger.debug("Iterating over variable %s", varname)
                     try:
-                        yield var.next()
+                        x = var.next()
+                        logger.debug("Yielding %s", x)
+                        yield x
                     except StopIteration:
+                        logger.debug("Variable is out of stuff!")
                         raise
+            #logger.debug("I'm out of variables!")
+            #raise StopIteration
+            logger.debug("falling out of the bottom of record_generator")
                     
         more_input = type_generator(record_generator(nc, self.dataset, var2id))
 
