@@ -1,4 +1,5 @@
 import time
+from sys import getsizeof
 
 from itertools import chain, ifilter
 from collections import Iterator
@@ -116,9 +117,17 @@ class NCResponse(BaseResponse):
                 if not dst_var.shape:
                     continue
 
+                # Compute how many fillvalues we need to emit
+                num_padding_bytes = (np.prod(dst_var.shape) * dst_var.var.dtype.itemsize) % 4
+                fill = dst_var.var.fillvalue
+                num_padding_fill = num_padding_bytes / fill.itemsize
+
                 # Make sure that all elements of the list are iterators
                 for x in dst_var:
                     yield x
+                debug("Padding for var %s = %d", varname, num_padding_bytes)
+                for _ in range(num_padding_fill):
+                    yield fill
             debug("Done with nonrecord input")
 
         # Create a generator for the record variables
@@ -129,13 +138,24 @@ class NCResponse(BaseResponse):
                 debug("file has no record variables")
                 return
             vars = [ iter(get_var(dst, table[varname])) for varname in nc.recvars.keys() ]
-            while True:
-                for var in vars:
+            if len(vars) == 1: #See "A special case" at the bottom of the spec
+                padding = 0
+            else:
+                padding = sum([var.dtype.itemsize for var in vars]) % 4
+            for _ in range(nc._recs): #"recs" in the NetCDF grammar
+                for var in vars: #"rec" in the NetCDF grammar
                     try:
                         yield var.next()
                     except StopIteration:
                         raise
-                    
+
+                for _ in range(padding):
+                    # This is not per the NetCDF spec. The spec says to fill a
+                    # variable's fill-value. But that doesn't make sense in
+                    # this context where there are multiple variable and could
+                    # have different length fill-values!
+                    yield '\x00'                
+
         more_input = type_generator(record_generator(nc, self.dataset, var2id))
 
         # Create a single pipeline which includes the non-record and record variables
