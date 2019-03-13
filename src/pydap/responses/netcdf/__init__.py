@@ -138,23 +138,13 @@ class NCResponse(BaseResponse):
                 debug("file has no record variables")
                 return
             vars = [ iter(get_var(dst, table[varname])) for varname in nc.recvars.keys() ]
-            if len(vars) == 1: #See "A special case" at the bottom of the spec
-                padding = 0
-            else:
-                padding = sum([var.dtype.itemsize for var in vars]) % 4
+
             for _ in range(nc._recs): #"recs" in the NetCDF grammar
                 for var in vars: #"rec" in the NetCDF grammar
                     try:
                         yield var.next()
                     except StopIteration:
                         raise
-
-                for _ in range(padding):
-                    # This is not per the NetCDF spec. The spec says to fill a
-                    # variable's fill-value. But that doesn't make sense in
-                    # this context where there are multiple variable and could
-                    # have different length fill-values!
-                    yield '\x00'                
 
         more_input = type_generator(record_generator(nc, self.dataset, var2id))
 
