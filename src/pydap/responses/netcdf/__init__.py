@@ -2,7 +2,7 @@ import time
 
 from itertools import chain, ifilter
 from collections import Iterator
-from logging import debug
+import logging
 from datetime import datetime
 
 import numpy as np
@@ -11,6 +11,8 @@ from pydap.model import *
 from pydap.lib import walk, get_var
 from pydap.responses.lib import BaseResponse
 from pupynere import netcdf_file, nc_generator
+
+logger = logging.getLogger(__name__)
 
 class NCResponse(BaseResponse):
     def __init__(self, dataset):
@@ -110,7 +112,7 @@ class NCResponse(BaseResponse):
             
         def nonrecord_input():
             for varname in nc.non_recvars.keys():
-                debug("Iterator for %s", varname)
+                logger.debug("Iterator for %s", varname)
                 dst_var = get_var(self.dataset, var2id[varname]).data
                 # skip 0-d variables
                 if not dst_var.shape:
@@ -118,15 +120,16 @@ class NCResponse(BaseResponse):
 
                 # Make sure that all elements of the list are iterators
                 for x in dst_var:
+                    logger.debug("nonrecord_input yielding %s from var %s", x, varname)
                     yield x
-            debug("Done with nonrecord input")
+            logger.debug("Done with nonrecord input")
 
         # Create a generator for the record variables
         recvars = nc.recvars.keys()
         def record_generator(nc, dst, table):
-            debug("record_generator() for dataset %s", dst)
+            logger.debug("record_generator() for dataset %s", dst)
             if not nc.recvars:
-                debug("file has no record variables")
+                logger.debug("file has no record variables")
                 return
             vars = [ iter(get_var(dst, table[varname])) for varname in nc.recvars.keys() ]
             while True:
