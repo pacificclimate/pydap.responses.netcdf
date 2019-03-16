@@ -5,11 +5,11 @@ here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.rst')).read()
 NEWS = open(os.path.join(here, 'NEWS.rst')).read()
 
-version = '0.5.3'
+version = '0.5.4'
 
 install_requires = [
     'numpy',
-    'pupynere_pdp >=1.1.3',
+    'pupynere_pdp >=1.1.4',
     'pydap_pdp >=3.2.1'
 ]
 
