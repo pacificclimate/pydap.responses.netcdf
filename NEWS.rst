@@ -1,6 +1,13 @@
 News
 ====
 
+0.6.0
+-----
+
+*Release date: 2019-04-04*
+
+* Changes to NetCDF 64-bit Offset Format to support files (without record variables) greater than 2 GiB.
+
 0.5.4
 -----
 
