@@ -18,7 +18,7 @@ class NCResponse(BaseResponse):
     def __init__(self, dataset):
         BaseResponse.__init__(self, dataset)
 
-        self.nc = netcdf_file(None)
+        self.nc = netcdf_file(None, version=2)
         if 'NC_GLOBAL' in self.dataset.attributes:
             self.nc._attributes.update(self.dataset.attributes['NC_GLOBAL'])
 
